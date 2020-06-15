@@ -3,8 +3,8 @@ Synchronize your Philips Hue lightbulbs with your Plex playback.
 
 ## Description
 plex-ambiance is a service that will:
-- Turn on your lights when you stop or pause a media in Plex
 - Turn off your lights when you start or resume a media in Plex
+- Turn on your lights when you stop or pause a media in Plex
 
 ## Usage
 ```
