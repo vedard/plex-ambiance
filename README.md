@@ -29,7 +29,7 @@ You can run plex-ambiance via the official Docker container
 version: "3"
 services:
   plex-ambiance:
-    image: plex-ambiance
+    image: vedard/plex-ambiance
     container_name: plex-ambiance
     command: >
       --plex-server "http://xxx.xxx.x.x"
