@@ -26,28 +26,36 @@ def main(plex_server, plex_client, hue_bridge, hue_token, on, off):
     click.echo(f"Listening for this device: {plex_client}")
     while True:
         try:
-
             response = etree.parse(f"{plex_server}/status/sessions")
-            new_state = response.xpath(
-                f'string(/MediaContainer/Video/Player[@device="{plex_client}"]/@state)')
+            new_state = response.xpath(f'string(/MediaContainer/Video/Player[@device="{plex_client}"]/@state)')
 
+            # Fallback unknown value to stopped
             if not new_state in ["playing", "paused", "buffering"]:
                 new_state = "stopped"
 
-            if last_state != new_state:
-                click.echo(f"{plex_client} is now: " + new_state)
-                if new_state in ["playing", "buffering"]:
-                    click.echo("Turning the lights off")
-                    for group in off:
-                        requests.put(
-                            f"{hue_bridge}/api/{hue_token}/groups/{group}/action", json={"on": False})
-                else:
-                    click.echo("Turning the lights on")
-                    for group in on:
-                        requests.put(
-                            f"{hue_bridge}/api/{hue_token}/groups/{group}/action", json={"on": True})
+            # Ignore buffering state
+            if new_state == "buffering":
+                continue
 
-                last_state = new_state
+            # Ignore when the state hasn't changed
+            if last_state == new_state:
+                continue
+
+            click.echo(f"{plex_client} is now: " + new_state)
+
+            # Turn off the lights when a media is played
+            if new_state == "playing":
+                click.echo("Turning the lights off")
+                for group in off:
+                    requests.put(f"{hue_bridge}/api/{hue_token}/groups/{group}/action", json={"on": False})
+
+            # Turn on the lights when a media is stopped or paused
+            else:
+                click.echo("Turning the lights on")
+                for group in on:
+                    requests.put(f"{hue_bridge}/api/{hue_token}/groups/{group}/action", json={"on": True})
+
+            last_state = new_state
 
         except Exception as ex:
             click.echo(ex)
