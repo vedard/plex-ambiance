@@ -30,12 +30,13 @@ def main(plex_server, plex_client, hue_bridge, hue_token, on, off):
             response = etree.parse(f"{plex_server}/status/sessions")
             new_state = response.xpath(
                 f'string(/MediaContainer/Video/Player[@device="{plex_client}"]/@state)')
+
             if not new_state in ["playing", "paused", "buffering"]:
                 new_state = "stopped"
 
             if last_state != new_state:
                 click.echo(f"{plex_client} is now: " + new_state)
-                if new_state == "playing":
+                if new_state in ["playing", "buffering"]:
                     click.echo("Turning the lights off")
                     for group in off:
                         requests.put(
