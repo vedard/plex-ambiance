@@ -4,6 +4,7 @@ import signal
 import click
 import time
 import requests
+from datetime import datetime
 from lxml import etree
 
 
@@ -15,18 +16,20 @@ from lxml import etree
 @click.option("--hue-token", required=True, envvar='HUE_TOKEN', help='The Hue API token')
 @click.option("--on", default=['0'], multiple=True, envvar='GROUPS_ON', help="The group of lights you want to turn on")
 @click.option("--off", default=['0'], multiple=True, envvar='GROUPS_OFF', help="The group of lights you want to turn on")
-def main(plex_server, plex_client, plex_token, hue_bridge, hue_token, on, off):
+@click.option("--trigger-after", default="00:00", envvar='TRIGGER_AFTER', help="Only trigger the lights when the local time has passed the set value")
+def main(plex_server, plex_client, plex_token, hue_bridge, hue_token, on, off, trigger_after):
     """ Synchronize your Philips Hue lightbulbs with your Plex playback
     """
 
     last_state = None
-    
+
     click.echo(f"Plex server: {plex_server}")
     click.echo(f"Hue bridge: {hue_bridge}")
     click.echo(f"Lights to turn on: {', '.join(on)}")
     click.echo(f"Lights to turn off: {', '.join(off)}")
     click.echo(f"Listening for this device: {plex_client}")
 
+    trigger_after = datetime.strptime(trigger_after, "%H:%M").time()
 
     plex_url = f"{plex_server}/status/sessions"
     if plex_token:
@@ -50,6 +53,12 @@ def main(plex_server, plex_client, plex_token, hue_bridge, hue_token, on, off):
                 continue
 
             click.echo(f"{plex_client} is now: " + new_state)
+
+            # Only trigger after the specified local time
+            if datetime.now().time() < trigger_after:
+                last_state = new_state
+                click.echo(f"Waiting for local time ({datetime.now().time()}) to reach {trigger_after}")
+                continue
 
             # Turn off the lights when a media is played
             if new_state == "playing":
